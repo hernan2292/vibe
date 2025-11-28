@@ -326,6 +326,104 @@ Cuando te pida editar, primero usa: TOOL:read(file_path="ruta") y luego TOOL:edi
    - "Documenta todos los métodos de ProductController"
    - "Crea un README para este módulo"
 
+## 🐍 Ejemplos con Python
+
+### 1. Crear una API con FastAPI
+
+**Usuario:**
+```
+Crea una API FastAPI con un endpoint para listar usuarios
+```
+
+**VIBE debería responder:**
+```
+Voy a crear la API con FastAPI.
+
+TOOL:write(file_path="main.py", content="from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import List
+
+app = FastAPI()
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: str
+
+users_db = [
+    User(id=1, name=\"Juan\", email=\"juan@example.com\"),
+    User(id=2, name=\"María\", email=\"maria@example.com\"),
+]
+
+@app.get(\"/users\", response_model=List[User])
+async def get_users():
+    return users_db
+")
+
+✅ API creada correctamente. Ejecuta con: uvicorn main:app --reload
+```
+
+### 2. Crear un Modelo Django
+
+**Usuario:**
+```
+Crea un modelo Product en Django con name, price y stock
+```
+
+**VIBE debería responder:**
+```
+Voy a buscar el archivo models.py.
+
+TOOL:glob(pattern="**/models.py")
+
+TOOL:read(file_path="app/models.py")
+
+TOOL:edit(file_path="app/models.py",
+    old_string="from django.db import models",
+    new_string="from django.db import models
+
+class Product(models.Model):
+    name = models.CharField(max_length=200)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    stock = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name")
+
+✅ Modelo creado. Ejecuta: python manage.py makemigrations
+```
+
+### 3. Crear Tests con Pytest
+
+**Usuario:**
+```
+Crea tests para la función calculate_total en utils.py
+```
+
+**VIBE debería responder:**
+```
+Voy a crear el archivo de tests.
+
+TOOL:write(file_path="test_utils.py", content="import pytest
+from utils import calculate_total
+
+def test_calculate_total_with_items():
+    items = [10, 20, 30]
+    assert calculate_total(items) == 60
+
+def test_calculate_total_empty():
+    assert calculate_total([]) == 0
+
+def test_calculate_total_negative():
+    items = [-10, 20]
+    assert calculate_total(items) == 10
+")
+
+✅ Tests creados. Ejecuta con: pytest test_utils.py
+```
+
 ---
 
 **¡Experimenta y descubre todo lo que VIBE puede hacer por ti!**
+

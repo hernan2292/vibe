@@ -1,10 +1,10 @@
-# VIBE - Tu Programador Personal para PHP
+# VIBE - Tu Programador Personal (PHP/Python)
 
-VIBE es un asistente de programación inteligente similar a Claude Code, pero optimizado para proyectos PHP con soporte para múltiples frameworks.
+VIBE es un asistente de programación inteligente similar a Claude Code, optimizado para proyectos PHP y Python con soporte para múltiples frameworks.
 
 ## 🚀 Características
 
-- **Detección automática de frameworks**: Laravel, Symfony, CodeIgniter, CakePHP, Yii, Slim
+- **Detección automática de frameworks**: Laravel, Symfony, CodeIgniter, CakePHP, Yii, Slim (PHP) | Django, FastAPI, Flask (Python)
 - **Herramientas avanzadas**: Edición inteligente, búsqueda de código, ejecución de comandos
 - **Contexto del proyecto**: Entiende tu proyecto automáticamente
 - **Ejecución automática**: No requiere confirmaciones manuales para comandos
@@ -106,6 +106,7 @@ Tú: Refactoriza el UserController para usar servicios
 
 ## 🎨 Frameworks Soportados
 
+### PHP
 - ✅ **Laravel** (con detección de Livewire e Inertia.js)
 - ✅ **Symfony**
 - ✅ **CodeIgniter**
@@ -114,16 +115,22 @@ Tú: Refactoriza el UserController para usar servicios
 - ✅ **Slim**
 - ✅ Proyectos PHP genéricos
 
+### Python
+- ✅ **Django**
+- ✅ **FastAPI**
+- ✅ **Flask**
+- ✅ Scripts Python genéricos
+
 ## 🔍 Diferencias con Claude Code
 
 | Característica | VIBE | Claude Code |
 |---------------|------|-------------|
 | **Lenguaje** | Python | Rust/Node |
-| **Enfoque** | PHP/Web | General |
+| **Enfoque** | PHP/Python/Web | General |
 | **Modelo** | Local (Ollama) | Claude API |
 | **Costo** | Gratis | Requiere API key |
 | **Privacidad** | 100% local | Requiere conexión |
-| **Frameworks** | Auto-detección PHP | General |
+| **Frameworks** | Auto-detección PHP/Python | General |
 
 ## ⚙️ Configuración Avanzada
 
@@ -219,7 +226,8 @@ MIT License - Úsalo libremente en tus proyectos.
 
 ## 🎯 Roadmap
 
-- [ ] Soporte para más frameworks (Express.js, Django, etc.)
+- [x] Soporte para Python (Django, FastAPI, Flask)
+- [ ] Soporte para JavaScript/TypeScript (Express.js, Next.js, etc.)
 - [ ] Sistema de plugins
 - [ ] Modo batch para procesar múltiples tareas
 - [ ] Integración con Git
@@ -229,4 +237,4 @@ MIT License - Úsalo libremente en tus proyectos.
 
 ---
 
-**Hecho con ❤️ para desarrolladores PHP**
+**Hecho con ❤️ para desarrolladores PHP y Python**

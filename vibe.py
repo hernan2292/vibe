@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Vibe - Tu programador personal para PHP
+Vibe - Tu programador personal (PHP/Python)
 Ejecuta: python vibe.py
 """
 
@@ -226,9 +226,34 @@ def detect_framework() -> Dict[str, any]:
         "config_files": []
     }
 
+    # Python Detection
+    if Path("manage.py").exists():
+        framework_info["name"] = "Django"
+        framework_info["language"] = "Python"
+        framework_info["config_files"].append("manage.py")
+    elif Path("pyproject.toml").exists() or Path("requirements.txt").exists():
+        framework_info["name"] = "Python Project"
+        framework_info["language"] = "Python"
+        if Path("pyproject.toml").exists():
+            framework_info["config_files"].append("pyproject.toml")
+        if Path("requirements.txt").exists():
+            framework_info["config_files"].append("requirements.txt")
+            try:
+                reqs = Path("requirements.txt").read_text().lower()
+                if "fastapi" in reqs:
+                    framework_info["name"] = "FastAPI"
+                elif "flask" in reqs:
+                    framework_info["name"] = "Flask"
+            except:
+                pass
+    elif list(Path(".").glob("*.py")):
+        framework_info["name"] = "Python Script"
+        framework_info["language"] = "Python"
+
     # Laravel
-    if Path("artisan").exists() and Path("composer.json").exists():
+    elif Path("artisan").exists() and Path("composer.json").exists():
         framework_info["name"] = "Laravel"
+        framework_info["language"] = "PHP"
         try:
             composer = json.loads(Path("composer.json").read_text())
             if "laravel/framework" in composer.get("require", {}):
@@ -254,20 +279,24 @@ def detect_framework() -> Dict[str, any]:
     # Symfony
     elif Path("bin/console").exists() and Path("symfony.lock").exists():
         framework_info["name"] = "Symfony"
+        framework_info["language"] = "PHP"
         framework_info["config_files"].append("config/routes.yaml")
 
     # CodeIgniter
     elif Path("system/CodeIgniter.php").exists():
         framework_info["name"] = "CodeIgniter"
+        framework_info["language"] = "PHP"
         framework_info["config_files"].append("application/config/config.php")
 
     # CakePHP
     elif Path("bin/cake").exists():
         framework_info["name"] = "CakePHP"
+        framework_info["language"] = "PHP"
 
     # Yii
     elif Path("yii").exists():
         framework_info["name"] = "Yii"
+        framework_info["language"] = "PHP"
 
     # Slim
     elif Path("composer.json").exists():
@@ -275,6 +304,7 @@ def detect_framework() -> Dict[str, any]:
             composer = json.loads(Path("composer.json").read_text())
             if "slim/slim" in composer.get("require", {}):
                 framework_info["name"] = "Slim"
+                framework_info["language"] = "PHP"
         except:
             pass
 
@@ -302,6 +332,8 @@ def get_project_context(framework_info: Dict) -> str:
     # Agregar archivos comunes según framework
     if framework_info['name'] == 'Laravel':
         important_files.extend(['composer.json', 'package.json', '.env.example'])
+    elif framework_info.get('language') == 'Python':
+        important_files.extend(['requirements.txt', 'pyproject.toml', 'setup.py', '.env.example'])
 
     for file_path in important_files[:5]:  # Limitar a 5 archivos
         path = Path(file_path)
@@ -474,53 +506,72 @@ def execute_tool(tool_name: str, params: Dict) -> ToolResult:
 def build_system_prompt(framework_info: Dict, project_context: str) -> str:
     """Construye el prompt del sistema basado en el framework"""
 
-    return f"""Eres VIBE, un asistente experto en Laravel y PHP.
+    language = framework_info.get('language', 'PHP')
+    framework_name = framework_info['name']
+    
+    # Patrones de archivo según lenguaje
+    if language == 'Python':
+        file_pattern = "**/*.py"
+        example_file = "main.py"
+        example_controller = "views.py"
+    else:
+        file_pattern = "**/*.php"
+        example_file = "composer.json"
+        example_controller = "AuthController.php"
+    
+    # Ejemplos específicos según framework
+    if language == 'Python':
+        example_1 = f"""Ejemplo 1 (Análisis):
+Usuario: ¿Qué dependencias usa el proyecto?
+Tú: Voy a revisar requirements.txt.
+TOOL:read(file_path=\"requirements.txt\")
+[Recibes: contenido con "fastapi==0.104.1"]
+Tú: El proyecto usa **FastAPI 0.104.1** según requirements.txt."""
+        
+        example_2 = f"""Ejemplo 2 (Crear archivo):
+Usuario: Crea un modelo de usuario con Pydantic
+Tú: Voy a crear el modelo.
+TOOL:write(file_path=\"models/user.py\", content=\"from pydantic import BaseModel\\n\\nclass User(BaseModel):\\n    id: int\\n    name: str\\n    email: str\\n\")"""
+        
+        example_3 = f"""Ejemplo 3 (Análisis completo):
+Usuario: Analiza el archivo de rutas
+Tú: Voy a buscar archivos de rutas.
+TOOL:glob(pattern=\"**/routes.py\")
+[Recibes: app/routes.py]
+Tú: Voy a leerlo.
+TOOL:read(file_path=\"app/routes.py\")
+[Recibes: contenido del archivo]
+Tú: ## Análisis de routes.py
 
-REGLAS CRÍTICAS:
-1. SIEMPRE responde con información útil, NUNCA vacío
-2. Cuando uses herramientas, COMPLETA la tarea hasta el final
-3. Después de RESULTADOS: continúa investigando O da respuesta final
-4. Si te preguntan sobre vibe.py: ese es TU código Python, puedes leerlo y modificarlo
-5. Puedes trabajar con CUALQUIER archivo del proyecto, no solo Laravel
-6. IMPORTANTE: Cuando recibas resultados suficientes, da la RESPUESTA FINAL inmediatamente, NO uses más herramientas innecesarias
+**Problemas encontrados:**
+1. Rutas sin validación de entrada
+2. No hay manejo de errores HTTP
+3. Falta documentación de endpoints
 
-Herramientas:
-- TOOL:glob(pattern="**/*.php") - buscar archivos
-- TOOL:read(file_path="ruta") - leer archivo
-- TOOL:grep(pattern="texto", glob_pattern="*.php") - buscar en código
-- TOOL:bash(command="cmd") - ejecutar comando
-- TOOL:edit(file_path="ruta", old_string="viejo", new_string="nuevo") - editar
-- TOOL:write(file_path="ruta", content="...") - crear archivo
-
-Flujo de trabajo:
-1. Usa herramientas para investigar (máximo 2-3 herramientas)
-2. Recibe resultados
-3. ¿Ya tienes suficiente información? → Da respuesta final INMEDIATAMENTE
-4. ¿Falta información crítica? → Usa UNA herramienta más
-
-Para CREAR archivos:
-- NO uses herramientas para investigar primero
-- Usa directamente TOOL:write(file_path="...", content="...") con el contenido completo
-
-Ejemplo 1 (Análisis):
+**Recomendaciones:**
+- Agregar validación con Pydantic models
+- Implementar exception handlers
+- Documentar con docstrings para OpenAPI"""
+    else:
+        example_1 = f"""Ejemplo 1 (Análisis):
 Usuario: ¿Qué versión de Laravel usa el proyecto?
 Tú: Voy a revisar composer.json.
-TOOL:read(file_path="composer.json")
-[Recibes: contenido con "laravel/framework": "^7.0"]
-Tú: El proyecto usa **Laravel 7.x** según composer.json.
-
-Ejemplo 2 (Crear archivo):
+TOOL:read(file_path=\"composer.json\")
+[Recibes: contenido con \"laravel/framework\": \"^7.0\"]
+Tú: El proyecto usa **Laravel 7.x** según composer.json."""
+        
+        example_2 = f"""Ejemplo 2 (Crear archivo):
 Usuario: Crea un plan de migración a Laravel 12
 Tú: Voy a crear el plan de migración.
-TOOL:write(file_path="MIGRACION_LARAVEL12.md", content="# Plan de Migración a Laravel 12\n\n## Versión actual: Laravel 7\n\n...")
-
-Ejemplo 3 (Análisis completo):
+TOOL:write(file_path=\"MIGRACION_LARAVEL12.md\", content=\"# Plan de Migración a Laravel 12\\n\\n## Versión actual: Laravel 7\\n\\n...\")"""
+        
+        example_3 = f"""Ejemplo 3 (Análisis completo):
 Usuario: Analiza AuthController
 Tú: Voy a buscar AuthController.
-TOOL:glob(pattern="**/AuthController.php")
+TOOL:glob(pattern=\"**/AuthController.php\")
 [Recibes: app/Http/Controllers/Api/V1/AuthController.php]
 Tú: Voy a leerlo.
-TOOL:read(file_path="app/Http/Controllers/Api/V1/AuthController.php")
+TOOL:read(file_path=\"app/Http/Controllers/Api/V1/AuthController.php\")
 [Recibes: contenido del archivo]
 Tú: ## Análisis de AuthController
 
@@ -532,7 +583,41 @@ Tú: ## Análisis de AuthController
 **Recomendaciones:**
 - Refactorizar login() en métodos más pequeños
 - Crear LoginRequest para validación
-- Reemplazar DB::raw() con Query Builder
+- Reemplazar DB::raw() con Query Builder"""
+    
+    return f"""Eres VIBE, un asistente experto en {framework_name} y {language}.
+
+REGLAS CRÍTICAS:
+1. SIEMPRE responde con información útil, NUNCA vacío
+2. Cuando uses herramientas, COMPLETA la tarea hasta el final
+3. Después de RESULTADOS: continúa investigando O da respuesta final
+4. Si te preguntan sobre vibe.py: ese es TU código Python, puedes leerlo y modificarlo
+5. Puedes trabajar con CUALQUIER archivo del proyecto, no solo {framework_name}
+6. IMPORTANTE: Cuando recibas resultados suficientes, da la RESPUESTA FINAL inmediatamente, NO uses más herramientas innecesarias
+
+Herramientas:
+- TOOL:glob(pattern=\"{file_pattern}\") - buscar archivos
+- TOOL:read(file_path=\"ruta\") - leer archivo
+- TOOL:grep(pattern=\"texto\", glob_pattern=\"*.{language.lower()}\") - buscar en código
+- TOOL:bash(command=\"cmd\") - ejecutar comando
+- TOOL:edit(file_path=\"ruta\", old_string=\"viejo\", new_string=\"nuevo\") - editar
+- TOOL:write(file_path=\"ruta\", content=\"...\") - crear archivo
+
+Flujo de trabajo:
+1. Usa herramientas para investigar (máximo 2-3 herramientas)
+2. Recibe resultados
+3. ¿Ya tienes suficiente información? → Da respuesta final INMEDIATAMENTE
+4. ¿Falta información crítica? → Usa UNA herramienta más
+
+Para CREAR archivos:
+- NO uses herramientas para investigar primero
+- Usa directamente TOOL:write(file_path=\"...\", content=\"...\") con el contenido completo
+
+{example_1}
+
+{example_2}
+
+{example_3}
 """
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -545,7 +630,7 @@ def vibe_chat():
 
     # Banner inicial
     console.print(Panel.fit(
-        "[bold cyan]VIBE[/] - Tu Programador Personal para PHP\n"
+        "[bold cyan]VIBE[/] - Tu Programador Personal (PHP/Python)\n"
         f"Modelo: [yellow]{MODEL}[/]",
         border_style="cyan"
     ))
